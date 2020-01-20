@@ -2,8 +2,8 @@ import os
 import cv2
 import numpy as np
 
+from utils.models.set_roundness import SetRoundness
 from utils.models.set_slimness import SetSlimness
-
 
 # https://arxiv.org/pdf/1401.4447.pdf
 # https://medium.com/analytics-vidhya/tutorial-how-to-scale-and-rotate-contours-in-opencv-using-python-f48be59c35a2
@@ -21,6 +21,9 @@ class SetTrainer:
         self.contours = self.load_contours()
         self.contours = self.rotate_contours()
 
+        self.slimness = None
+        self.roundness = None
+
 
     def train(self):
         # for i in range(0, len(self.images)):
@@ -29,8 +32,8 @@ class SetTrainer:
         #     cv2.imshow("image", self.images[i])
         #     cv2.waitKey(0)
 
-        slimness = self.get_slimness()
-        print(self.set_path + "\tslimness -> smallest: " + str(slimness.smallest_ratio) + ", biggest: " + str(slimness.biggest_ratio))
+        self.slimness = self.get_slimness()
+        self.roundness = self.get_roundness()
 
 
     # PRIVATE
@@ -113,17 +116,29 @@ class SetTrainer:
     # TRAINING
 
     def get_slimness(self):
-        slimness = SetSlimness()
+        set_slimness = SetSlimness()
 
         for c in self.contours:
             x, y, w, h = cv2.boundingRect(c)
             ratio = float(w) / float(h)
-            slimness.add_value(ratio)
+            set_slimness.add_value(ratio)
 
-        return slimness
+        return set_slimness
+
+    def get_roundness(self):
+        set_roundness = SetRoundness()
+
+        for c in self.contours:
+            perimeter = cv2.arcLength(c, True)
+            area = cv2.contourArea(c)
+            roundness = (4 * 3.14159 * area) / (perimeter ** 2)
+            set_roundness.add_value(roundness)
+
+        return set_roundness
 
 
 # HELPERS
+
 
 def rotate_contour(cnt, angle):
     M = cv2.moments(cnt)
