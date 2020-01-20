@@ -2,6 +2,7 @@ import os
 import cv2
 import numpy as np
 
+from utils.models.set_dispersion import SetDispersion
 from utils.models.set_roundness import SetRoundness
 from utils.models.set_slimness import SetSlimness
 
@@ -23,6 +24,7 @@ class SetTrainer:
 
         self.slimness = None
         self.roundness = None
+        self.dispersion = None
 
 
     def train(self):
@@ -32,8 +34,9 @@ class SetTrainer:
         #     cv2.imshow("image", self.images[i])
         #     cv2.waitKey(0)
 
-        self.slimness = self.get_slimness()
-        self.roundness = self.get_roundness()
+        # self.slimness = self.get_slimness()
+        # self.roundness = self.get_roundness()
+        self.dispersion = self.get_dispersion()
 
 
     # PRIVATE
@@ -81,11 +84,6 @@ class SetTrainer:
 
             x, y, w, h = cv2.boundingRect(c)
 
-            M = cv2.moments(c)
-            cx = int(M['m10'] / M['m00'])
-            cy = int(M['m01'] / M['m00'])
-
-
             # create rotated
             max_hr = h
             max_rotation = c
@@ -99,6 +97,10 @@ class SetTrainer:
             contours.append(max_rotation)
 
             # DISPLAY RESULTS
+            # M = cv2.moments(c)
+            # cx = int(M['m10'] / M['m00'])
+            # cy = int(M['m01'] / M['m00'])
+            #
             # print("x: " + str(x) + " y: " + str(y) + " w: " + str(w) + " h: " + str(h))
             # print(str(cx) + " " + str(cy))
             #
@@ -136,6 +138,34 @@ class SetTrainer:
 
         return set_roundness
 
+    def get_dispersion(self):
+        set_dispersion = SetDispersion()
+
+        a = 0
+        for c in self.contours:
+            M = cv2.moments(c)
+            cx = int(M['m10'] / M['m00'])
+            cy = int(M['m01'] / M['m00'])
+            cx = float(cx)
+            cy = float(cy)
+
+            max_val = 0
+            min_val = 1000000
+
+            for t in c:
+                (x, y) = tuple(t[0])
+                val = np.math.sqrt((float(x) - cx) ** 2 + (float(y) - cy) ** 2)
+
+                if val > max_val:
+                    max_val = val
+
+                if val < min_val:
+                    min_val = val
+
+            set_dispersion.add_value(float(max_val / min_val))
+
+
+        return set_dispersion
 
 # HELPERS
 
