@@ -27,7 +27,7 @@ class SetDispersion:
         return float(sum_val) / float(instances_num)
 
     def get_variance(self):
-        mean = self.get_mean_without_outliers()
+        mean = self.get_mean()
 
         sum = 0
         for val in self.values:
@@ -37,7 +37,7 @@ class SetDispersion:
 
     def get_prob(self, some_val):
         variance = self.get_variance()
-        mean = self.get_mean_without_outliers()
+        mean = self.get_mean()
 
         first = 1 / np.sqrt(2 * 3.14159 * variance)
         second = np.exp(-1 * ((some_val - mean) ** 2) / (2 * variance))

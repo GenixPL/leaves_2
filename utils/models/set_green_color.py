@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class SetRoundness:
+class SetGreenColor:
 
     def __init__(self):
         self.values = []
@@ -27,7 +27,7 @@ class SetRoundness:
         return float(sum_val) / float(instances_num)
 
     def get_variance(self):
-        mean = self.get_mean()
+        mean = self.get_mean_without_outliers()
 
         sum = 0
         for val in self.values:
@@ -37,7 +37,7 @@ class SetRoundness:
 
     def get_prob(self, some_val):
         variance = self.get_variance()
-        mean = self.get_mean()
+        mean = self.get_mean_without_outliers()
 
         first = 1 / (np.sqrt(2 * 3.14159 * variance))
         second = np.exp(-1 * ((some_val - mean) ** 2) / (2 * variance))

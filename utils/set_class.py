@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 
 from utils.models.set_dispersion import SetDispersion
+from utils.models.set_green_color import SetGreenColor
 from utils.models.set_roundness import SetRoundness
 from utils.models.set_slimness import SetSlimness
 
@@ -17,18 +18,21 @@ class SetClass:
         self.set_path = set_path
         self.class_id = class_id
 
-        self.filesNames = os.listdir(set_path)
+        self.fileNames = os.listdir(set_path)
 
         self.images = self.load_images()
 
         self.contours = self.load_contours()
         self.contours = self.rotate_contours()
 
+        self.images_with_mask = self.load_img_with_mask()
+
         self.slimness: SetSlimness = None
         self.roundness: SetRoundness = None
         self.dispersion: SetDispersion = None
+        self.green_color: SetGreenColor = None
 
-    def train(self):
+    def calculate(self):
         # for i in range(0, len(self.images)):
         #     cv2.drawContours(self.images[i], self.contours[i], -1, (255, 0, 0), 2)
         #
@@ -38,6 +42,7 @@ class SetClass:
         self.slimness = self.get_slimness()
         self.roundness = self.get_roundness()
         self.dispersion = self.get_dispersion()
+        self.green_color = self.get_green_color()
 
     # PRIVATE
 
@@ -46,7 +51,7 @@ class SetClass:
     def load_images(self):
         images = []
 
-        for f in self.filesNames:
+        for f in self.fileNames:
             images.append(cv2.imread(self.set_path + "/" + f))
 
         return images
@@ -114,6 +119,21 @@ class SetClass:
 
         return contours
 
+    def load_img_with_mask(self):
+        images_with_contours = []
+
+        for i in self.images:
+            hsv = cv2.cvtColor(i, cv2.COLOR_BGR2HSV)
+
+            low_green = np.array([0, 18, 0])
+            high_green = np.array([255, 255, 255])
+            green_mask = cv2.inRange(hsv, low_green, high_green)
+
+            res = cv2.bitwise_and(i.copy(), i.copy(), mask=green_mask)
+            images_with_contours.append(res)
+
+        return images_with_contours
+
     # TRAINING
 
     def get_slimness(self):
@@ -140,8 +160,19 @@ class SetClass:
 
         return set_dispersion
 
+    def get_green_color(self):
+        set_green_color = SetGreenColor()
+
+        for file in self.fileNames:
+            path = self.set_path + "/" + file
+            img_with_mask = get_img_with_mask(path)
+            green_mask = get_green_mask(path)
+            set_green_color.add_value(get_green_color(img_with_mask, green_mask))
+
+        return set_green_color
 
 # HELPERS
+
 
 def contour(file_path):
     img = cv2.imread(file_path)
@@ -176,6 +207,32 @@ def contour(file_path):
             max_rotation = rotated
 
     return max_rotation
+
+
+def get_green_mask(file_path):
+    i = cv2.imread(file_path)
+
+    hsv = cv2.cvtColor(i, cv2.COLOR_BGR2HSV)
+
+    low_green = np.array([0, 18, 0])
+    high_green = np.array([255, 255, 255])
+    green_mask = cv2.inRange(hsv, low_green, high_green)
+
+    return green_mask
+
+
+def get_img_with_mask(file_path):
+    i = cv2.imread(file_path)
+
+    hsv = cv2.cvtColor(i, cv2.COLOR_BGR2HSV)
+
+    low_green = np.array([0, 18, 0])
+    high_green = np.array([255, 255, 255])
+    green_mask = cv2.inRange(hsv, low_green, high_green)
+
+    res = cv2.bitwise_and(i.copy(), i.copy(), mask=green_mask)
+
+    return res
 
 
 def slimness(contour):
@@ -213,7 +270,26 @@ def dispersion(contour):
     return float(max_val / min_val)
 
 
+def get_green_color(image, mask):
+    # This function return mean value of green color in given img
 
+    mean = cv2.mean(image)
+    multiplier = float(mask.size) / cv2.countNonZero(mask)
+    mean = tuple([multiplier * x for x in mean])
+
+    # BGR
+    # n = 0
+    # sum = 0
+    # (w, h, d) = image.shape
+    # for x in range(0, w):
+    #     for y in range(0, h):
+    #         px = image[x][y]
+    #         if px[0] != 0 or px[1] != 0 or px[2] != 0:
+    #             n += 1
+    #             sum += px[2]
+
+    # return float(sum) / n
+    return mean[2]
 
 
 def rotate_contour(cnt, angle):
