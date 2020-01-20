@@ -8,15 +8,17 @@ def rename_files():
     baseDirPath = os.path.dirname(__file__) + "/data/test/type_"
 
     for i in range(1, 7):
-        images = []
         filesNames = os.listdir(baseDirPath + str(i))
 
         counter = 1
         for file in filesNames:
+            if file == ".DS_Store":
+                continue
             img = cv2.imread(baseDirPath + str(i) + "/" + file)
             newFile = baseDirPath + str(i) + "/" + str(i) + "_" + str(counter) + ".jpg"
             cv2.imwrite(newFile, img)
             counter += 1
+            os.remove(baseDirPath + str(i) + "/" + file)
 
 
 def clear_results():
