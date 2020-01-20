@@ -4,3 +4,4 @@
 .idea/workspace.xml
 
 *.pyc
+data/test/.DS_Store
