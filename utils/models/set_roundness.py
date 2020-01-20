@@ -27,7 +27,7 @@ class SetRoundness:
         return float(sum_val) / float(instances_num)
 
     def get_variance(self):
-        mean = self.get_mean()
+        mean = self.get_mean_without_outliers()
 
         sum = 0
         for val in self.values:
@@ -37,14 +37,14 @@ class SetRoundness:
 
     def get_prob(self, some_val):
         variance = self.get_variance()
-        mean = self.get_mean()
+        mean = self.get_mean_without_outliers()
 
         first = 1 / (np.sqrt(2 * 3.14159 * variance))
         second = np.exp(-1 * ((some_val - mean) ** 2) / (2 * variance))
 
         return first * second
 
-    def get_average_without_outliers(self):
+    def get_mean_without_outliers(self):
         self.values.sort()
         instances_num = len(self.values)
 

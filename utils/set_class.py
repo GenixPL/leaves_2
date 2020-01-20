@@ -213,6 +213,9 @@ def dispersion(contour):
     return float(max_val / min_val)
 
 
+
+
+
 def rotate_contour(cnt, angle):
     M = cv2.moments(cnt)
     cx = int(M['m10'] / M['m00'])
