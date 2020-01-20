@@ -45,4 +45,4 @@ class NaiveBayes:
         pd = proper_class.dispersion.get_prob(sc.dispersion(contour))
         pg = proper_class.green_color.get_prob(sc.get_green_color(image, sc.get_green_mask(file_path)))
 
-        return ps * pr * pd * pg
+        return pr * pd * pg
