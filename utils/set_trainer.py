@@ -2,8 +2,11 @@ import os
 import cv2
 import numpy as np
 
-# https://arxiv.org/pdf/1401.4447.pdf
 from utils.models.set_slimness import SetSlimness
+
+
+# https://arxiv.org/pdf/1401.4447.pdf
+# https://medium.com/analytics-vidhya/tutorial-how-to-scale-and-rotate-contours-in-opencv-using-python-f48be59c35a2
 
 
 class SetTrainer:
@@ -16,6 +19,7 @@ class SetTrainer:
         self.images = self.load_images()
 
         self.contours = self.load_contours()
+        self.contours = self.rotate_contours()
 
 
     def train(self):
@@ -65,20 +69,95 @@ class SetTrainer:
 
         return contours
 
+    def rotate_contours(self):
+        contours = []
+
+        a = 0
+        for contour in self.contours:
+            c = contour.copy()
+
+            x, y, w, h = cv2.boundingRect(c)
+
+            M = cv2.moments(c)
+            cx = int(M['m10'] / M['m00'])
+            cy = int(M['m01'] / M['m00'])
+
+
+            # create rotated
+            max_hr = h
+            max_rotation = c
+            for angle in range(0, 180, 5):
+                rotated = rotate_contour(c, angle)
+                xr, yr, wr, hr = cv2.boundingRect(rotated)
+                if hr > max_hr:
+                    max_hr = hr
+                    max_rotation = rotated
+
+            contours.append(max_rotation)
+
+            # DISPLAY RESULTS
+            # print("x: " + str(x) + " y: " + str(y) + " w: " + str(w) + " h: " + str(h))
+            # print(str(cx) + " " + str(cy))
+            #
+            # blank_image = np.zeros((1000, 1000, 3), np.uint8)
+            # cv2.drawContours(blank_image, c, -1, (255, 0, 0), 2)
+            # cv2.circle(blank_image, (cx, cy), 7, (255, 0, 0), -1)
+            #
+            # cv2.drawContours(blank_image, max_rotation, -1, (0, 0, 255), 2)
+            #
+            # cv2.imshow("image", blank_image)
+            # cv2.waitKey(0)
+
+        return contours
+
     # TRAINING
 
     def get_slimness(self):
-        smallest_ration = 100
-        biggest_ration = 0
+        slimness = SetSlimness()
 
         for c in self.contours:
             x, y, w, h = cv2.boundingRect(c)
-            ration = float(w) / float(h)
+            ratio = float(w) / float(h)
+            slimness.add_value(ratio)
 
-            if ration > biggest_ration:
-                biggest_ration = ration
+        return slimness
 
-            if ration < smallest_ration:
-                smallest_ration = ration
 
-        return SetSlimness(smallest_ration, biggest_ration)
+# HELPERS
+
+def rotate_contour(cnt, angle):
+    M = cv2.moments(cnt)
+    cx = int(M['m10'] / M['m00'])
+    cy = int(M['m01'] / M['m00'])
+
+    cnt_norm = cnt - [cx, cy]
+
+    coordinates = cnt_norm[:, 0, :]
+    xs, ys = coordinates[:, 0], coordinates[:, 1]
+    thetas, rhos = cart2pol(xs, ys)
+
+    thetas = np.rad2deg(thetas)
+    thetas = (thetas + angle) % 360
+    thetas = np.deg2rad(thetas)
+
+    xs, ys = pol2cart(thetas, rhos)
+
+    cnt_norm[:, 0, 0] = xs
+    cnt_norm[:, 0, 1] = ys
+
+    cnt_rotated = cnt_norm + [cx, cy]
+    cnt_rotated = cnt_rotated.astype(np.int32)
+
+    return cnt_rotated
+
+
+def cart2pol(x, y):
+    theta = np.arctan2(y, x)
+    rho = np.hypot(x, y)
+    return theta, rho
+
+
+def pol2cart(theta, rho):
+    x = rho * np.cos(theta)
+    y = rho * np.sin(theta)
+    return x, y
