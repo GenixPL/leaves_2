@@ -277,18 +277,7 @@ def get_green_color(image, mask):
     multiplier = float(mask.size) / cv2.countNonZero(mask)
     mean = tuple([multiplier * x for x in mean])
 
-    # BGR
-    # n = 0
-    # sum = 0
-    # (w, h, d) = image.shape
-    # for x in range(0, w):
-    #     for y in range(0, h):
-    #         px = image[x][y]
-    #         if px[0] != 0 or px[1] != 0 or px[2] != 0:
-    #             n += 1
-    #             sum += px[2]
 
-    # return float(sum) / n
     return mean[2]
 
 
