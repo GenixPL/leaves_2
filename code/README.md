@@ -1,1 +1,1 @@
-Run main.py as Pythin's script.
+Run `main.py` as Pythin's script.
