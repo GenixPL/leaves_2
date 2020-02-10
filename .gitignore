@@ -1,7 +1,2 @@
 
-.idea/vcs.xml
-
-.idea/workspace.xml
-
-*.pyc
-data/test/.DS_Store
+.DS_Store
